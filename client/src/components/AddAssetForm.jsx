@@ -7,7 +7,7 @@ import { validateAsset } from '../lib/validation.js';
 
 const EMPTY = { item_name: '', category: '', room_number: '' };
 
-export default function AddAssetForm({ categories, rooms, onCreated }) {
+export default function AddAssetForm({ categories, rooms, onCreated, autoFocus = false }) {
   const [values, setValues] = useState(EMPTY);
   const [errors, setErrors] = useState({});
   const [formError, setFormError] = useState(null);
@@ -58,7 +58,7 @@ export default function AddAssetForm({ categories, rooms, onCreated }) {
   }
 
   return (
-    <form className="card add-form" onSubmit={handleSubmit} noValidate aria-labelledby="add-asset-heading">
+    <form id="add-asset-form" className="card add-form" onSubmit={handleSubmit} noValidate aria-labelledby="add-asset-heading">
       <h2 id="add-asset-heading" className="card__title">
         Add asset
       </h2>
@@ -66,6 +66,7 @@ export default function AddAssetForm({ categories, rooms, onCreated }) {
         label="Item name"
         name="item_name"
         inputRef={nameRef}
+        autoFocus={autoFocus}
         value={values.item_name}
         onChange={update('item_name')}
         onBlur={revalidate('item_name')}
