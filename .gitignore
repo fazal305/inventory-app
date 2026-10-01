@@ -9,4 +9,4 @@ client/dist/
 # OS / editor
 .DS_Store
 *.log
-e2e/screenshots/
+client/e2e/screenshots/
