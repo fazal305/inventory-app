@@ -8,7 +8,7 @@ import Alert from '../components/Alert.jsx';
 import SiteFooter from '../components/SiteFooter.jsx';
 import { useToast } from '../components/Toasts.jsx';
 import { api } from '../lib/api.js';
-import { useDebouncedValue, useDocumentTitle, useSlowFlag } from '../lib/hooks.js';
+import { useDebouncedValue, useDocumentTitle, useMediaQuery, useSlowFlag } from '../lib/hooks.js';
 
 const collator = new Intl.Collator(undefined, { numeric: true, sensitivity: 'base' });
 
@@ -34,6 +34,11 @@ export default function Dashboard() {
   const [moving, setMoving] = useState(null);
   const [deleting, setDeleting] = useState(null);
   const [highlightId, setHighlightId] = useState(null);
+
+  // On narrow screens the add form starts collapsed so the inventory stays above the fold.
+  const wide = useMediaQuery('(min-width: 960px)');
+  const [addOpen, setAddOpen] = useState(false);
+  const showAddForm = wide || addOpen;
 
   const load = useCallback(async () => {
     setStatus('loading');
@@ -151,7 +156,20 @@ export default function Dashboard() {
 
         <div className="dashboard__grid">
           <aside className="dashboard__aside">
-            <AddAssetForm categories={categories} rooms={rooms} onCreated={handleCreated} />
+            {!wide && (
+              <button
+                type="button"
+                className={`btn btn--block ${addOpen ? 'btn--secondary' : 'btn--primary'}`}
+                aria-expanded={addOpen}
+                aria-controls="add-asset-form"
+                onClick={() => setAddOpen((v) => !v)}
+              >
+                {addOpen ? 'Close form' : '+ Add asset'}
+              </button>
+            )}
+            {showAddForm && (
+              <AddAssetForm categories={categories} rooms={rooms} onCreated={handleCreated} autoFocus={!wide} />
+            )}
           </aside>
 
           <section className="dashboard__main card" aria-labelledby="inventory-heading">
@@ -253,9 +271,8 @@ export default function Dashboard() {
                 </svg>
                 <h3 className="state__title">The register is empty</h3>
                 <p className="state__text">
-                  Add the first device with the form{' '}
-                  <span className="only-wide">on the left</span>
-                  <span className="only-narrow">above</span>. Every staff member will see it here.
+                  Add the first device with the {wide ? 'form on the left' : '“Add asset” button above'}. Every staff
+                  member will see it here.
                 </p>
               </div>
             )}
