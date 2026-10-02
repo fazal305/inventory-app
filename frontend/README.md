@@ -6,7 +6,7 @@ It started as a set of multi-page PHP scripts (kept in [`legacy/`](legacy/)) and
 
 ![Dashboard showing the hardware register with a device just moved to a new room](docs/screenshots/dashboard.png)
 
-**Live Demo:** [https://inventory-app-fz17.vercel.app](https://inventory-app-fz17.vercel.app) — the React client, deployed on Vercel. Its `/assets` page talks to the `backend/` API, live on Render (see `../backend/docs/DEPLOYMENT.md`). The room register at `/` needs its own PHP + MySQL API (`server/`, this folder), which has no live host yet — run it locally (see [Getting started](#getting-started)) to see that part.
+**Live Demo:** [https://inventory-app-ten-ochre.vercel.app](https://inventory-app-ten-ochre.vercel.app) — the React client, deployed on Vercel. Its `/assets` page talks to the `backend/` API, live on Render (see `../backend/docs/DEPLOYMENT.md`). The room register at `/` needs its own PHP + MySQL API (`server/`, this folder), which has no live host yet — run it locally (see [Getting started](#getting-started)) to see that part.
 
 > The devices shown in the screenshots are fictional sample data from `server/bin/seed-sample-assets.php`.
 

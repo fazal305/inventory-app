@@ -1,6 +1,6 @@
 # Inventory (merged)
 
-**Live Demo:** [https://inventory-app-fz17.vercel.app](https://inventory-app-fz17.vercel.app)
+**Live Demo:** [https://inventory-app-ten-ochre.vercel.app](https://inventory-app-ten-ochre.vercel.app)
 (`frontend/client`, on Vercel) — the `/assets` page talks to `backend/`'s
 API, live on Render with its own managed Postgres
 ([`inventory-api-guxd.onrender.com`](https://inventory-api-guxd.onrender.com/api/v1),
