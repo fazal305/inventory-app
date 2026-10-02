@@ -12,7 +12,9 @@ require dirname(__DIR__, 2) . '/src/bootstrap.php';
 
 Http::allowMethods(['POST']);
 
-RateLimiter::hit('login-ip:' . Http::clientIp(), 20, 15 * 60);
+// Only failures count, so a whole office signing in from one shared IP is never locked out.
+$ipBucket = 'login-ip:' . Http::clientIp();
+RateLimiter::check($ipBucket, 30, 15 * 60);
 
 $body = Http::jsonBody();
 $username = is_string($body['username'] ?? null) ? trim($body['username']) : '';
@@ -42,6 +44,7 @@ $valid = password_verify($password, $hash) && $staff !== null;
 
 if (!$valid) {
     RateLimiter::record($userBucket);
+    RateLimiter::record($ipBucket);
     throw new HttpError(401, 'INVALID_CREDENTIALS', 'Incorrect username or password.');
 }
 

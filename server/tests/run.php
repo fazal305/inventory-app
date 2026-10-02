@@ -143,6 +143,7 @@ try {
     $anon = new Client($base);
     $r = $anon->request('GET', '/api/assets.php');
     check('GET assets without session is 401', $r['status'] === 401 && $r['body']['error']['code'] === 'UNAUTHENTICATED', $r);
+    check('anonymous requests do not get a session cookie', !str_contains(strtolower($r['headers']), 'set-cookie'), $r['headers']);
     $r = $anon->request('GET', '/api/session.php');
     check('GET session without session is 401', $r['status'] === 401, $r);
     $r = $anon->request('GET', '/api/login.php');
@@ -236,6 +237,9 @@ try {
     check('after logout, reads are 401', $r['status'] === 401, $r);
     $r = $staff->request('POST', '/api/logout.php');
     check('logout without a session still succeeds', $r['status'] === 204, $r);
+    $stale = new Client($base);
+    $r = $stale->request('GET', '/api/assets.php', null, ['Cookie: staff_sid=madeupsessionid123']);
+    check('unknown session cookie is 401 and cleared', $r['status'] === 401 && (bool) preg_match('/Set-Cookie: staff_sid=deleted|Set-Cookie: staff_sid=;/i', $r['headers']), $r['headers']);
 
     echo "Rate limiting\n";
     $pdo->exec('DELETE FROM rate_limit_hits');
@@ -250,10 +254,16 @@ try {
     check('login works again once the window is cleared', $r['status'] === 200, $r);
     $pdo->exec('DELETE FROM rate_limit_hits');
     $codes = [];
-    for ($i = 0; $i < 21; $i++) {
+    for ($i = 0; $i < 31; $i++) {
         $codes[] = (new Client($base))->login('user' . $i, 'x')['status'];
     }
-    check('more than 20 login attempts per IP in 15 min are 429', $codes[19] === 401 && $codes[20] === 429, $codes);
+    check('more than 30 failed logins per IP in 15 min are 429', $codes[29] === 401 && $codes[30] === 429, $codes);
+    $pdo->exec('DELETE FROM rate_limit_hits');
+    $codes = [];
+    for ($i = 0; $i < 35; $i++) {
+        $codes[] = (new Client($base))->login('tester', 'correct-horse-9')['status'];
+    }
+    check('successful logins from one shared IP are never rate limited', array_unique($codes) === [200], array_count_values($codes));
     $pdo->exec('DELETE FROM rate_limit_hits');
 
     echo "Routing\n";
