@@ -6,6 +6,7 @@ import Login from './pages/Login.jsx';
 import NotFound from './pages/NotFound.jsx';
 
 const Dashboard = lazy(() => import('./pages/Dashboard.jsx'));
+const Assets = lazy(() => import('./pages/Assets.jsx'));
 const Privacy = lazy(() => import('./pages/Privacy.jsx'));
 
 export default function App() {
@@ -23,6 +24,14 @@ export default function App() {
             element={
               <RequireAuth>
                 <Dashboard />
+              </RequireAuth>
+            }
+          />
+          <Route
+            path="/assets"
+            element={
+              <RequireAuth>
+                <Assets />
               </RequireAuth>
             }
           />

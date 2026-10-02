@@ -56,6 +56,27 @@
   white-space: nowrap;
 }
 
+.app-header__nav {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  font-size: var(--text-sm);
+  font-weight: 500;
+}
+
+.app-header__nav a {
+  color: var(--ink-muted);
+  text-decoration: none;
+  padding: var(--space-1) 0;
+  border-bottom: 2px solid transparent;
+}
+
+.app-header__nav a:hover,
+.app-header__nav a.active {
+  color: var(--ink);
+  border-bottom-color: var(--accent);
+}
+
 .page {
   flex: 1;
   padding-block: var(--space-6) var(--space-7);
@@ -592,6 +613,28 @@
   overflow-wrap: anywhere;
 }
 
+/* Asset status badges, used on the backend-powered Assets page. */
+.tag--status-in_use {
+  background: var(--success-soft);
+  color: var(--success);
+}
+
+.tag--status-under_repair {
+  background: var(--warning-soft);
+  color: var(--warning-ink);
+}
+
+.tag--status-retired,
+.tag--status-disposed {
+  background: var(--surface-sunken);
+  color: var(--ink-muted);
+}
+
+.tag--status-disposed {
+  background: var(--danger-soft);
+  color: var(--danger);
+}
+
 .skeleton {
   display: block;
   height: 14px;
@@ -1122,4 +1165,46 @@
 .back-link {
   font-size: var(--text-sm);
   font-weight: 500;
+}
+
+/* ---------- Assets page (backend/ asset management) ---------- */
+
+.muted {
+  color: var(--ink-muted);
+}
+
+.history-list {
+  display: grid;
+  gap: var(--space-3);
+  max-height: 50vh;
+  overflow-y: auto;
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.history-list__item {
+  padding-block: var(--space-2);
+  border-bottom: 1px solid var(--line);
+}
+
+.history-list__item:last-child {
+  border-bottom: none;
+}
+
+.history-list__text {
+  margin: 0;
+}
+
+.history-list__meta {
+  margin: 2px 0 0;
+  font-size: var(--text-sm);
+  color: var(--ink-muted);
+}
+
+.history-list__note {
+  margin: var(--space-1) 0 0;
+  font-size: var(--text-sm);
+  font-style: italic;
+  color: var(--ink-muted);
 }

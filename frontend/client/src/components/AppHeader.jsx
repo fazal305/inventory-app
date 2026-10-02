@@ -28,6 +28,12 @@ export default function AppHeader() {
           <span className="brand__name">Asset Register</span>
         </Link>
         {username && (
+          <nav className="app-header__nav" aria-label="Main">
+            <Link to="/">Room register</Link>
+            <Link to="/assets">Asset management</Link>
+          </nav>
+        )}
+        {username && (
           <div className="app-header__user">
             <span className="app-header__who">
               <span className="visually-hidden">Signed in as </span>
