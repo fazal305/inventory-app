@@ -162,6 +162,103 @@ Partial update, at least one field required, whatever is present is fully re-val
 
 ---
 
+## Assets
+
+Individually tracked items — a specific laptop, chair, or forklift — as
+distinct from `products`' bulk retail stock. Reads are public except
+`/history`; writes require `Authorization: Bearer <token>`.
+
+### `GET /assets`
+Supports search, status filtering, category filtering, sorting, and
+pagination together — same shape as `GET /products`.
+
+| Query param | Notes |
+|---|---|
+| `search` | substring match against `name`, `asset_tag`, or `serial_number` |
+| `status` | one of `in_use`, `in_storage`, `under_repair`, `retired`, `disposed`; anything else → `422` |
+| `category` | category **slug** (optional — assets may have no category) — an unknown slug returns an empty page, not `404` |
+| `sort` | one of `asset_tag`, `name`, `status`, `purchase_date`, `created_at`; prefix with `-` for descending (e.g. `-purchase_date`); anything else → `422` |
+| `page` | positive integer, default `1`; non-numeric → `422` |
+| `limit` | positive integer, default `20`, capped at `100`; non-positive → `422` |
+
+```bash
+curl "http://127.0.0.1:8000/api/v1/assets?status=in_use&sort=-purchase_date"
+```
+```json
+{
+  "success": true,
+  "data": [
+    {
+      "id": 1, "asset_tag": "AST-1001", "name": "Dell Latitude 5440 Laptop",
+      "category_id": 1, "serial_number": "SN-DL54-0001", "status": "in_use",
+      "assigned_to": "Ada Lovelace", "location": "HQ - 3rd Floor",
+      "purchase_date": "2024-02-10", "purchase_cost": "1299.00",
+      "warranty_expires_at": "2027-02-10", "notes": "Primary engineering laptop.",
+      "created_at": "...", "updated_at": "..."
+    }
+  ],
+  "meta": { "page": 1, "limit": 20, "total": 1, "totalPages": 1 }
+}
+```
+
+### `GET /assets/{id}`
+Errors: `400 INVALID_ID` · `404 NOT_FOUND`
+
+### `GET /assets/{id}/history` — auth required
+Returns the asset's full status/assignment audit trail, newest first: one
+row per `POST` (creation) or status/assignment-changing `PUT`/`PATCH`.
+
+```json
+{
+  "success": true,
+  "data": [
+    {
+      "id": 7, "asset_id": 1, "changed_by": 3, "changed_by_name": "Ada Lovelace",
+      "previous_status": "in_storage", "new_status": "in_use",
+      "previous_assigned_to": null, "new_assigned_to": "Ada Lovelace",
+      "note": null, "created_at": "..."
+    }
+  ],
+  "meta": null
+}
+```
+
+### `POST /assets` — auth required
+| Body | `{"asset_tag": string, "name": string, "category_id": int\|null, "serial_number": string\|null, "status": string (default "in_storage"), "assigned_to": string\|null, "location": string\|null, "purchase_date": "YYYY-MM-DD"\|null, "purchase_cost": number\|null, "warranty_expires_at": "YYYY-MM-DD"\|null, "notes": string\|null}` |
+| Success | `201 Created` |
+| Errors | `422 VALIDATION_ERROR` · `422 INVALID_CATEGORY` · `409 DUPLICATE_ASSET_TAG` · `409 DUPLICATE_SERIAL_NUMBER` |
+
+Creating an asset also writes its first history row (`new_status` = the
+asset's initial status).
+
+```bash
+curl -X POST http://127.0.0.1:8000/api/v1/assets \
+  -H "Authorization: Bearer <token>" -H "Content-Type: application/json" \
+  -d '{"asset_tag":"AST-2001","name":"ThinkPad X1 Carbon","status":"in_storage"}'
+```
+
+### `PUT /assets/{id}` — auth required
+Full replace — `asset_tag` and `name` required (same as POST). Same error
+set as POST plus `400 INVALID_ID` / `404 NOT_FOUND`.
+
+### `PATCH /assets/{id}` — auth required
+Partial update, at least one field required. Whatever is present is fully
+re-validated (including asset-tag/serial-number uniqueness and category
+existence). Changing `status` or `assigned_to` appends a row to the asset's
+history automatically — no separate call needed.
+
+```bash
+curl -X PATCH http://127.0.0.1:8000/api/v1/assets/1 \
+  -H "Authorization: Bearer <token>" -H "Content-Type: application/json" \
+  -d '{"status":"under_repair","assigned_to":null}'
+```
+
+### `DELETE /assets/{id}` — auth required
+`204 No Content` on success; `400 INVALID_ID` · `404 NOT_FOUND` otherwise.
+Also deletes the asset's history rows (`ON DELETE CASCADE`).
+
+---
+
 ## Protocol-level responses (apply to every route)
 
 | Situation | Response |

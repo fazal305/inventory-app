@@ -7,6 +7,15 @@ client (Postman today, a React app later) consumes over HTTP + JSON.
 
 There is no server-rendered dashboard. The API is the product.
 
+**Note on this copy**: this `backend/` directory is `fazal305/inventory-api`
+merged into `fazal305/inventory-app`, extended with an `assets` resource
+(individually tracked items — asset tag, status, assignment, location,
+purchase/warranty info, and a status/assignment history log) so the
+merged product's primary feature, asset management, has real backend
+support rather than only bulk-stock `products`. See the root
+[`README.md`](../README.md) for how `frontend/` and `backend/` fit
+together.
+
 **Live**: `https://inventory-api-guxd.onrender.com/api/v1` (Render free
 tier — the first request after a period of inactivity can take 50+ seconds
 to wake up; see `docs/DEPLOYMENT.md`).
@@ -15,10 +24,13 @@ to wake up; see `docs/DEPLOYMENT.md`).
 
 - Token-based authentication (register / login / logout) with hashed,
   revocable, expiring tokens
-- Full CRUD for categories and products, with the product → category
-  relationship enforced at the database level
-- Search, category filtering (by slug), allowlisted sorting, and pagination
-  on the product listing endpoint
+- Full CRUD for categories, products, and **assets** — individually tracked
+  items (asset tag, serial number, status, assigned-to, location,
+  purchase/warranty info) with a status/assignment **history log**, distinct
+  from `products`' bulk retail stock
+- Search, category filtering (by slug), status filtering (assets),
+  allowlisted sorting, and pagination on the product and asset listing
+  endpoints
 - Server-side validation on every write endpoint, independent of anything a
   client claims to have already checked
 - A consistent JSON response envelope and a fixed set of error codes across
@@ -87,15 +99,24 @@ Full reference with request/response bodies and every error case:
 | GET | `/api/v1/products` (search/filter/sort/pagination) | — |
 | GET | `/api/v1/products/{id}` | — |
 | POST / PUT / PATCH / DELETE | `/api/v1/products[/{id}]` | required |
+| GET | `/api/v1/assets` (search/status/category filter/sort/pagination) | — |
+| GET | `/api/v1/assets/{id}` | — |
+| GET | `/api/v1/assets/{id}/history` (status/assignment audit trail) | required |
+| POST / PUT / PATCH / DELETE | `/api/v1/assets[/{id}]` | required |
 
 ## Database
 
-4 tables: `users`, `personal_access_tokens`, `categories`, `products`.
-Schema, keys, and indexes are defined in `database/migrations/`. Notably:
-`products.category_id` is a required foreign key (`ON DELETE RESTRICT` —
-a category with products can't be deleted), and both `products.sku` and
-`categories.slug`/`name` carry unique constraints enforced by MySQL itself,
-not just application code.
+6 tables: `users`, `personal_access_tokens`, `categories`, `products`,
+`assets`, `asset_status_history`. Schema, keys, and indexes are defined in
+`database/migrations/`. Notably: `products.category_id` is a required
+foreign key (`ON DELETE RESTRICT` — a category with products can't be
+deleted), while `assets.category_id` is optional (`ON DELETE SET NULL` —
+an asset doesn't require a category, and deleting one just clears it).
+Both `products.sku` and `assets.asset_tag`/`serial_number` carry unique
+constraints enforced by the database itself, not just application code.
+Every asset-affecting create/update that changes `status` or `assigned_to`
+appends a row to `asset_status_history` (see `AssetService::applyUpdate`),
+giving each asset a full audit trail instead of only its current state.
 
 ## Authentication
 

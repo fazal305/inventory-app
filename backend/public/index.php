@@ -4,16 +4,19 @@ declare(strict_types=1);
 
 use App\Config\Database;
 use App\Config\Env;
+use App\Controllers\AssetController;
 use App\Controllers\AuthController;
 use App\Controllers\CategoryController;
 use App\Controllers\ProductController;
 use App\Middleware\AuthMiddleware;
+use App\Repositories\AssetRepository;
 use App\Repositories\CategoryRepository;
 use App\Repositories\ProductRepository;
 use App\Repositories\TokenRepository;
 use App\Repositories\UserRepository;
 use App\Responses\ApiResponse;
 use App\Routing\Router;
+use App\Services\AssetService;
 use App\Services\AuthService;
 use App\Services\CategoryService;
 use App\Services\ProductService;
@@ -176,6 +179,26 @@ $router->post('/api/v1/products', fn ($params, $body) => $productController()->s
 $router->put('/api/v1/products/{id}', fn ($params, $body) => $productController()->replace($params, $body), [$requireAuth]);
 $router->patch('/api/v1/products/{id}', fn ($params, $body) => $productController()->patch($params, $body), [$requireAuth]);
 $router->delete('/api/v1/products/{id}', fn ($params, $body) => $productController()->destroy($params, $body), [$requireAuth]);
+
+// Assets: individually tracked items (asset tag, status, assignment,
+// location, purchase/warranty info) — the product this API now primarily
+// exists to support, as distinct from `products`' bulk retail stock.
+$assetController = function () use ($categoryRepository): AssetController {
+    static $instance = null;
+    if ($instance === null) {
+        $assetRepository = new AssetRepository(Database::connection());
+        $instance = new AssetController(new AssetService($assetRepository, $categoryRepository()));
+    }
+    return $instance;
+};
+
+$router->get('/api/v1/assets', fn ($params, $body) => $assetController()->index($params, $body, $_GET));
+$router->get('/api/v1/assets/{id}', fn ($params, $body) => $assetController()->show($params, $body));
+$router->get('/api/v1/assets/{id}/history', fn ($params, $body) => $assetController()->history($params, $body), [$requireAuth]);
+$router->post('/api/v1/assets', fn ($params, $body) => $assetController()->store($params, $body), [$requireAuth]);
+$router->put('/api/v1/assets/{id}', fn ($params, $body) => $assetController()->replace($params, $body), [$requireAuth]);
+$router->patch('/api/v1/assets/{id}', fn ($params, $body) => $assetController()->patch($params, $body), [$requireAuth]);
+$router->delete('/api/v1/assets/{id}', fn ($params, $body) => $assetController()->destroy($params, $body), [$requireAuth]);
 
 // --- Dispatch --------------------------------------------------------------
 $result = $router->dispatch($method, $path);

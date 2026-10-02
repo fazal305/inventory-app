@@ -227,6 +227,64 @@ check(status($r) === 204, 'delete product -> 204');
 $r = request($baseUrl, 'DELETE', "/products/{$productId}", null, $token);
 check(status($r) === 404, 'delete already-deleted product -> 404');
 
+// ============================================================ Assets
+
+echo "-- Assets --\n";
+
+$r = request($baseUrl, 'GET', '/assets');
+check(status($r) === 200, 'list assets -> 200');
+
+$r = request($baseUrl, 'GET', '/assets/999999');
+check(status($r) === 404, 'get nonexistent asset -> 404');
+
+$assetTag = "AST-TEST-{$runId}";
+
+$r = request($baseUrl, 'POST', '/assets', ['asset_tag' => $assetTag, 'name' => 'Test Laptop']);
+check(status($r) === 401, 'create asset without token -> 401');
+
+$r = request($baseUrl, 'POST', '/assets', ['asset_tag' => $assetTag, 'name' => 'Test Laptop', 'status' => 'in_storage'], $token);
+check(status($r) === 201 && $r['body']['data']['status'] === 'in_storage', 'create asset -> 201, defaults applied');
+$assetId = $r['body']['data']['id'];
+
+$r = request($baseUrl, 'POST', '/assets', ['asset_tag' => $assetTag, 'name' => 'Dup Tag'], $token);
+check(status($r) === 409 && code($r) === 'DUPLICATE_ASSET_TAG', 'create asset duplicate asset_tag -> 409');
+
+$r = request($baseUrl, 'POST', '/assets', ['asset_tag' => "{$assetTag}-B", 'name' => 'Bad Status', 'status' => 'bogus'], $token);
+check(status($r) === 422, 'create asset invalid status -> 422');
+
+$r = request($baseUrl, 'POST', '/assets', ['asset_tag' => "{$assetTag}-C", 'name' => 'Bad Cat', 'category_id' => 999999], $token);
+check(status($r) === 422 && code($r) === 'INVALID_CATEGORY', 'create asset invalid category_id -> 422');
+
+$r = request($baseUrl, 'GET', "/assets/{$assetId}/history");
+check(status($r) === 401, 'asset history without token -> 401');
+
+$r = request($baseUrl, 'GET', "/assets/{$assetId}/history", null, $token);
+check(status($r) === 200 && count($r['body']['data']) === 1 && $r['body']['data'][0]['new_status'] === 'in_storage', 'asset history after creation -> 1 entry');
+
+$r = request($baseUrl, 'PATCH', "/assets/{$assetId}", ['status' => 'in_use', 'assigned_to' => 'Test User'], $token);
+check(status($r) === 200 && $r['body']['data']['status'] === 'in_use' && $r['body']['data']['assigned_to'] === 'Test User', 'PATCH asset status + assigned_to -> 200');
+
+$r = request($baseUrl, 'GET', "/assets/{$assetId}/history", null, $token);
+check(status($r) === 200 && count($r['body']['data']) === 2, 'asset history after status change -> 2 entries');
+
+$r = request($baseUrl, 'PATCH', "/assets/{$assetId}", ['location' => 'Shelf 1'], $token);
+check(status($r) === 200, 'PATCH asset non-history field -> 200');
+
+$r = request($baseUrl, 'GET', "/assets/{$assetId}/history", null, $token);
+check(status($r) === 200 && count($r['body']['data']) === 2, 'PATCH of non-tracked field does not add history -> still 2 entries');
+
+$r = request($baseUrl, 'PATCH', "/assets/{$assetId}", [], $token);
+check(status($r) === 422, 'PATCH asset empty body -> 422');
+
+$r = request($baseUrl, 'GET', "/assets?status=in_use&search=" . urlencode('Test Laptop'));
+check(status($r) === 200 && $r['body']['meta']['total'] >= 1, 'filter assets by status + search -> matches');
+
+$r = request($baseUrl, 'DELETE', "/assets/{$assetId}", null, $token);
+check(status($r) === 204, 'delete asset -> 204');
+
+$r = request($baseUrl, 'DELETE', "/assets/{$assetId}", null, $token);
+check(status($r) === 404, 'delete already-deleted asset -> 404');
+
 // ============================================================ Query features
 
 echo "-- Query features --\n";
