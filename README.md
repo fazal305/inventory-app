@@ -126,7 +126,7 @@ Writes need the `X-CSRF-Token` header. Status codes in use:
 - The session cookie is `HttpOnly` and `SameSite=Lax`, and gets `Secure` when `SESSION_SECURE_COOKIE=true`. The session ID is regenerated on sign-in, and idle sessions expire.
 - Writes and logout require a per-session CSRF token. JSON-only bodies also block cross-site form posts.
 - Rate limits:
-  - 20 sign-in attempts per IP every 15 minutes
+  - 30 failed sign-ins per IP every 15 minutes (successful ones don't count, so a whole office behind one IP is never locked out)
   - 5 failed attempts per username every 15 minutes
   - per-user limits on reads and writes
 - Input is validated on the server, with length limits and a room-number pattern. The client mirrors the same rules.
@@ -139,7 +139,7 @@ See [SECURITY.md](SECURITY.md) to report a vulnerability.
 ## Testing
 
 ```bash
-php server/tests/run.php          # 49 API checks against a separate DB (TEST_DB_NAME, default staff_assets_test)
+php server/tests/run.php          # 52 API checks against a separate DB (TEST_DB_NAME, default staff_assets_test)
 cd client && npm run build        # production build
 npm run test:e2e                  # 57 browser checks; needs the app on :8080 and the demo account (see client/e2e/smoke.mjs)
 ```

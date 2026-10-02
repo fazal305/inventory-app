@@ -19,7 +19,16 @@ ini_set('display_errors', '0');
 ini_set('log_errors', '1');
 error_reporting(E_ALL);
 
+// Warnings and notices become exceptions so they can't silently corrupt a response;
+// deprecations are only logged, so a PHP upgrade can't turn them into 500s.
 set_error_handler(static function (int $severity, string $message, string $file, int $line): bool {
+    if (!(error_reporting() & $severity)) {
+        return false;
+    }
+    if ($severity === E_DEPRECATED || $severity === E_USER_DEPRECATED) {
+        error_log(sprintf('[api] Deprecated: %s in %s:%d', $message, $file, $line));
+        return true;
+    }
     throw new \ErrorException($message, 0, $severity, $file, $line);
 });
 

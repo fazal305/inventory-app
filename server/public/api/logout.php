@@ -9,6 +9,10 @@ require dirname(__DIR__, 2) . '/src/bootstrap.php';
 
 Http::allowMethods(['POST']);
 
+if (!Auth::hasSessionCookie()) {
+    Http::noContent();
+}
+
 Auth::startSession();
 
 // Signing out of an already-expired session still succeeds, so the client can always reset.

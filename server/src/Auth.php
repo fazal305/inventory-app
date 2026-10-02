@@ -6,6 +6,14 @@ namespace App;
 
 final class Auth
 {
+    private const COOKIE = 'staff_sid';
+
+    /** Lets callers skip creating a session (and a cookie) for visitors who never signed in. */
+    public static function hasSessionCookie(): bool
+    {
+        return isset($_COOKIE[self::COOKIE]) && $_COOKIE[self::COOKIE] !== '';
+    }
+
     public static function startSession(): void
     {
         if (session_status() === PHP_SESSION_ACTIVE) {
@@ -14,7 +22,7 @@ final class Auth
 
         ini_set('session.use_strict_mode', '1');
         ini_set('session.use_only_cookies', '1');
-        session_name('staff_sid');
+        session_name(self::COOKIE);
         session_set_cookie_params([
             'lifetime' => 0,
             'path' => '/',
@@ -33,9 +41,14 @@ final class Auth
      */
     public static function requireStaff(): array
     {
+        if (!self::hasSessionCookie()) {
+            throw new HttpError(401, 'UNAUTHENTICATED', 'Please sign in to continue.');
+        }
         self::startSession();
 
         if (!isset($_SESSION['staff_id'])) {
+            // A stale or unknown cookie: clear it rather than keep an empty session around.
+            self::destroySession();
             throw new HttpError(401, 'UNAUTHENTICATED', 'Please sign in to continue.');
         }
 
